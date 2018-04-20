@@ -7,7 +7,6 @@ metadata:
     platform: kubernetes_sigs_kubebuilder
   name: default-system
 spec: {}
-status: {}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
@@ -154,11 +153,6 @@ spec:
           type: object
       type: object
   version: v1alpha1
-status:
-  acceptedNames:
-    kind: ""
-    plural: ""
-  conditions: null
 ---
 apiVersion: v1
 kind: Service
@@ -176,8 +170,6 @@ spec:
     api: default
     control-plane: controller-manager
     platform: kubernetes_sigs_kubebuilder
-status:
-  loadBalancer: {}
 ---
 apiVersion: apps/v1
 kind: StatefulSet
@@ -210,7 +202,7 @@ spec:
         - --install-crds=false
         command:
         - /root/controller-manager
-        image: my-image
+        image: foxish/app:6bbc7bdb
         name: controller-manager
         resources:
           limits:
@@ -221,12 +213,3 @@ spec:
             memory: 20Mi
       terminationGracePeriodSeconds: 10
   updateStrategy: {}
-status:
-  replicas: 0
-requests:
-            cpu: 100m
-            memory: 20Mi
-      terminationGracePeriodSeconds: 10
-  updateStrategy: {}
-status:
-  replicas: 0

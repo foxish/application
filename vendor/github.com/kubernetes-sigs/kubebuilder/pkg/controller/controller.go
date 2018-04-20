@@ -25,10 +25,9 @@ import (
 	"time"
 
 	"github.com/golang/glog"
-	"github.com/kubernetes-sigs/kubebuilder/pkg/controller/eventhandlers"
+	"github.com/kubernetes-sigs/kubebuilder/pkg/controller/handlefunctions"
 	"github.com/kubernetes-sigs/kubebuilder/pkg/controller/informers"
 	"github.com/kubernetes-sigs/kubebuilder/pkg/controller/metrics"
-	"github.com/kubernetes-sigs/kubebuilder/pkg/controller/predicates"
 	"github.com/kubernetes-sigs/kubebuilder/pkg/controller/types"
 	"github.com/kubernetes-sigs/kubebuilder/pkg/inject/run"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -42,7 +41,7 @@ import (
 var (
 	// DefaultReconcileFn is used by GenericController if Reconcile is not set
 	DefaultReconcileFn = func(k types.ReconcileKey) error {
-		log.Printf("No ReconcileFn defined - skipping %+v", k)
+		log.Printf("No ReconcileFn definded - skipping %+v", k)
 		return nil
 	}
 
@@ -88,46 +87,28 @@ func (gc *GenericController) GetMetrics() metrics.Metrics {
 	}
 }
 
-// Watch watches objects matching obj's type and enqueues their keys to be reconcild.
-func (gc *GenericController) Watch(obj metav1.Object, p ...predicates.Predicate) error {
+// Watch watches objects matching obj's type and enqueues their keys.
+func (gc *GenericController) Watch(obj metav1.Object) error {
 	gc.once.Do(gc.init)
-	return gc.queue.addEventHandler(obj,
-		eventhandlers.MapAndEnqueue{Map: eventhandlers.MapToSelf, Predicates: p})
+	return gc.queue.watchFor(obj)
 }
 
-// WatchControllerOf reconciles the controller of the object type being watched.  e.g. If the
-// controller created a Pod, watch the Pod for events and invoke the controller reconcile function.
-// Uses path to lookup the ancestors.  Will lookup each ancestor in the path until it gets to the
-// root and then reconcile this key.
-//
-// Example: Deployment controller creates a ReplicaSet.  ReplicaSet controller creates a Pod.  Deployment
-// controller wants to have its reconcile method called for Pod events for any Pods it created (transitively).
-// - Pod event occurs - find owners references
-// - Lookup the Pod parent ReplicaSet by using the first path element (compare UID to ref)
-// - Lookup the ReplicaSet parent Deployment by using the second path element (compare UID to ref)
-// - Enqueue reconcile for Deployment namespace/name
-//
-// This could be implemented as:
-// WatchControllerOf(&corev1.Pod, eventhandlers.Path{FnToLookupReplicaSetByNamespaceName, FnToLookupDeploymentByNamespaceName })
-func (gc *GenericController) WatchControllerOf(obj metav1.Object, path eventhandlers.Path,
-	p ...predicates.Predicate) error {
+// WatchAndMapToController watches objects matching obj's type and enqueues the keys of their controllers.
+func (gc *GenericController) WatchAndMapToController(obj metav1.Object, gvks ...metav1.GroupVersionKind) error {
 	gc.once.Do(gc.init)
-	return gc.queue.addEventHandler(obj,
-		eventhandlers.MapAndEnqueue{Map: eventhandlers.MapToController{Path: path}.Map, Predicates: p})
+	return gc.queue.watchForAndMapToController(obj, gvks...)
 }
 
-// WatchTransformationOf watches objects matching obj's type and enqueues the key returned by mapFn.
-func (gc *GenericController) WatchTransformationOf(obj metav1.Object, mapFn eventhandlers.ObjToKey,
-	p ...predicates.Predicate) error {
+// WatchAndMap watches objects matching obj's type and enqueues the key returned by mapFn.
+func (gc *GenericController) WatchAndMap(obj metav1.Object, mapFn handlefunctions.ObjToKey) error {
 	gc.once.Do(gc.init)
-	return gc.queue.addEventHandler(obj,
-		eventhandlers.MapAndEnqueue{Map: mapFn, Predicates: p})
+	return gc.queue.watchForAndMapToNewObjectKey(obj, mapFn)
 }
 
-// WatchEvents watches objects matching obj's type and uses the functions from provider to handle events.
-func (gc *GenericController) WatchEvents(obj metav1.Object, provider types.HandleFnProvider) error {
+// WatchAndHandleEvents watches objects matching obj's type and uses the functions from provider to handle events.
+func (gc *GenericController) WatchAndHandleEvents(obj metav1.Object, provider types.HandleFnProvider) error {
 	gc.once.Do(gc.init)
-	return gc.queue.addEventHandler(obj, fnToInterfaceAdapter{provider})
+	return gc.queue.watchForAndHandleEvent(obj, fnToInterfaceAdapter{provider})
 }
 
 // WatchChannel enqueues object keys read from the channel.

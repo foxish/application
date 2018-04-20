@@ -17,21 +17,13 @@ limitations under the License.
 package args
 
 import (
-	"time"
+    "time"
 
-	"github.com/golang/glog"
+	"github.com/kubernetes-sigs/kubebuilder/pkg/admission"
 	"github.com/kubernetes-sigs/kubebuilder/pkg/controller"
-	"github.com/kubernetes-sigs/kubebuilder/pkg/inject/run"
-	corev1 "k8s.io/api/core/v1"
-	rbacv1 "k8s.io/api/rbac/v1"
-	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
-	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/kubernetes/scheme"
-	typedcorev1 "k8s.io/client-go/kubernetes/typed/core/v1"
 	"k8s.io/client-go/rest"
-	"k8s.io/client-go/tools/record"
+    "k8s.io/client-go/informers"
 )
 
 // InjectArgs are the common arguments for initializing controllers and admission hooks
@@ -48,66 +40,18 @@ type InjectArgs struct {
 	// ControllerManager is the controller manager
 	ControllerManager *controller.ControllerManager
 
-	// EventBroadcaster
-	EventBroadcaster record.EventBroadcaster
-}
-
-// CreateRecorder returns a new recorder
-func (iargs InjectArgs) CreateRecorder(name string) record.EventRecorder {
-	return iargs.EventBroadcaster.NewRecorder(scheme.Scheme, corev1.EventSource{Component: name})
+	// AdmissionManager is the admission webhook manager
+	AdmissionHandler *admission.AdmissionManager
 }
 
 // CreateInjectArgs returns new arguments for initializing objects
 func CreateInjectArgs(config *rest.Config) InjectArgs {
-	cs := kubernetes.NewForConfigOrDie(config)
-	eventBroadcaster := record.NewBroadcaster()
-	eventBroadcaster.StartLogging(glog.Infof)
-	eventBroadcaster.StartRecordingToSink(&typedcorev1.EventSinkImpl{Interface: cs.CoreV1().Events("")})
+    cs := kubernetes.NewForConfigOrDie(config)
 	return InjectArgs{
 		Config:              config,
 		KubernetesClientSet: cs,
-		KubernetesInformers: informers.NewSharedInformerFactory(cs, 2*time.Minute),
+        KubernetesInformers: informers.NewSharedInformerFactory(cs, 2 * time.Minute),
 		ControllerManager:   &controller.ControllerManager{},
-		EventBroadcaster:    eventBroadcaster,
+		AdmissionHandler:    &admission.AdmissionManager{},
 	}
-}
-
-// Injector is used by code generators to register code generated objects
-type Injector struct {
-	// CRDs are CRDs that may be created / updated at startup
-	CRDs []*apiextensionsv1beta1.CustomResourceDefinition
-
-	// PolicyRules are RBAC policy rules that may be installed with the controller
-	PolicyRules []rbacv1.PolicyRule
-
-	// GroupVersions are the api group versions in the CRDs
-	GroupVersions []schema.GroupVersion
-
-	// Runnables objects run with RunArguments
-	Runnables []Runnable
-
-	// RunFns are functions run with RunArguments
-	RunFns []RunFn
-
-	// ControllerManager is used to register Informers and Controllers
-	ControllerManager *controller.ControllerManager
-}
-
-// Run will run all of the registered RunFns and Runnables
-func (i Injector) Run(a run.RunArguments) error {
-	for _, r := range i.Runnables {
-		go r.Run(a)
-	}
-	for _, r := range i.RunFns {
-		go r(a)
-	}
-	return nil
-}
-
-// RunFn can be registered with an Injector and run
-type RunFn func(arguments run.RunArguments) error
-
-// Runnable can be registered with an Injector and run
-type Runnable interface {
-	Run(arguments run.RunArguments) error
 }

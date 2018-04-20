@@ -14,13 +14,20 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-/*
-The controller package describes comment directives that may be applied to controllers
-*/
-package controller
+package controllergen
 
-// Controller annotates a type as being a controller for a specific resource
-const Controller = "// +controller:group=,version=,kind=,resource="
+import (
+	"github.com/kubernetes-sigs/kubebuilder/cmd/internal/codegen"
+	"k8s.io/gengo/generator"
+)
 
-// RBAC annotates a controller struct as needing an RBAC rule to run
-const RBAC = "// +rbac:groups=<group1;group2>,resources=<resource1;resource2>,verbs=<verb1;verb2>"
+type Generator struct{}
+
+// GenerateInject returns a Generator for the controller package e.g. pkg/controller
+func (g *Generator) GenerateInject(controllers []codegen.Controller, apis *codegen.APIs, filename string) generator.Generator {
+	return &injectGenerator{
+		generator.DefaultGen{OptionalName: filename},
+		controllers,
+		apis,
+	}
+}

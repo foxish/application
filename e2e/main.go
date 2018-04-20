@@ -14,13 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-/*
-The controller package describes comment directives that may be applied to controllers
-*/
-package controller
+package main
 
-// Controller annotates a type as being a controller for a specific resource
-const Controller = "// +controller:group=,version=,kind=,resource="
+func main(){
 
-// RBAC annotates a controller struct as needing an RBAC rule to run
-const RBAC = "// +rbac:groups=<group1;group2>,resources=<resource1;resource2>,verbs=<verb1;verb2>"
+}

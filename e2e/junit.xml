@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+  <testsuite tests="4" failures="0" time="0.420772585">
+      <testcase name="Application CRD should install correctly should create CRD" classname="Application Type Suite" time="0.220739138"></testcase>
+      <testcase name="Application CRD should install correctly should register an application" classname="Application Type Suite" time="0.097515709"></testcase>
+      <testcase name="Application CRD should install correctly should delete application" classname="Application Type Suite" time="0.052072578"></testcase>
+      <testcase name="Application CRD should install correctly should delete application CRD" classname="Application Type Suite" time="0.050005572"></testcase>
+  </testsuite>

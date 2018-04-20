@@ -14,13 +14,28 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-/*
-The controller package describes comment directives that may be applied to controllers
-*/
-package controller
+package update
 
-// Controller annotates a type as being a controller for a specific resource
-const Controller = "// +controller:group=,version=,kind=,resource="
+import (
+	"github.com/spf13/cobra"
+)
 
-// RBAC annotates a controller struct as needing an RBAC rule to run
-const RBAC = "// +rbac:groups=<group1;group2>,resources=<resource1;resource2>,verbs=<verb1;verb2>"
+var updateCmd = &cobra.Command{
+	Use:   "update",
+	Short: "Command group for updating the kubebuilder version.",
+	Long:  `Command group for updating the kubebuilder version.`,
+	Example: `
+# Update the vendored dependencies under vendor/
+kubebuilder update vendor
+`,
+	Run: RunUpdate,
+}
+
+func AddUpdate(cmd *cobra.Command) {
+	cmd.AddCommand(updateCmd)
+	AddUpdateVendorCmd(updateCmd)
+}
+
+func RunUpdate(cmd *cobra.Command, args []string) {
+	cmd.Help()
+}
